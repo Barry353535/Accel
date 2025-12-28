@@ -1,0 +1,1008 @@
+<! DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACCEL INTERNATIONAL - China Business Trip</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBi6bkRKKYlHJg3YnsLSVR35ex8y71jH3g&libraries=places,geometry"></script>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            background:    #1a1a2e;
+            color: #fff;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            height: 100vh;
+        }
+
+        @media (max-width: 1000px) {
+            .container {
+                grid-template-columns:   1fr;
+                grid-template-rows: 60vh 40vh;
+            }
+        }
+
+        .  header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 380px;
+            z-index: 100;
+            background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, transparent 100%);
+            padding: 20px 30px;
+            pointer-events: none;
+        }
+
+        @media (max-width: 1000px) {
+            .header { 
+                right: 0; 
+            }
+        }
+
+        .header h1 {
+            font-size: 1.6rem;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #8892a0;
+            font-size:  0.9rem;
+            margin-top: 5px;
+        }
+
+        .  map-section {
+            position: relative;
+            height: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height:   100%;
+            background: #e0e0e0;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index:   100;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .  btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.95);
+            color: #1a1a2e;
+        }
+
+        . btn: hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0,0,0,0.4);
+        }
+
+        .legend {
+            position: absolute;
+            top: 85px;
+            right: 460px;
+            background: rgba(0,0,0,0.9);
+            padding: 15px 18px;
+            border-radius:   12px;
+            z-index: 100;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .legend-title {
+            font-size: 0.85rem;
+            color: #fff;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin:   8px 0;
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+
+        .  legend-line {
+            width: 30px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        . legend-start { 
+            background: #9C27B0; 
+        }
+
+        .legend-flight { 
+            background: #00d4ff; 
+        }
+
+        .legend-ground { 
+            background: #00ff88; 
+        }
+
+        .legend-train { 
+            background: #ff6b6b; 
+        }
+
+        .info-box {
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            transform:   translateX(-50%);
+            background: rgba(0,0,0,0.95);
+            padding: 15px 20px;
+            border-radius:   12px;
+            min-width: 350px;
+            z-index:   100;
+            border: 1px solid rgba(0,212,255,0.4);
+            display: none;
+        }
+
+        .info-box.show { 
+            display: block; 
+        }
+
+        .info-box h3 {
+            color: #00d4ff;
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        . info-box p {
+            color: #8892a0;
+            font-size: 0.85rem;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #12192a 0%, #0d1320 100%);
+            overflow-y: auto;
+            border-left: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header {
+            padding: 22px 18px;
+            border-bottom:   1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            background: #12192a;
+            z-index: 10;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 18px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .stat {
+            text-align: center;
+            padding: 10px 5px;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight:   700;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #8892a0;
+            margin-top: 3px;
+        }
+
+        .  day-list { 
+            padding: 12px; 
+        }
+
+        . day-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 3px solid rgba(0,212,255,0.3);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .day-card:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        .day-card.  active {
+            border-left-color: #00ff88;
+            background: rgba(0,255,136,0.08);
+        }
+
+        .day-header {
+            padding: 15px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .day-num {
+            font-weight: 700;
+            font-size: 1.05rem;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .day-title {
+            font-size: 0.85rem;
+            color: #8892a0;
+            margin-top: 2px;
+        }
+
+        .  day-toggle {
+            color: #8892a0;
+            transition: transform 0.3s;
+        }
+
+        . day-card.open . day-toggle {
+            transform:  rotate(180deg);
+        }
+
+        .day-content {
+            max-height: 0;
+            overflow:   hidden;
+            transition: max-height 0.3s;
+        }
+
+        .day-card.open .day-content {
+            max-height: 500px;
+        }
+
+        .  location-list {
+            list-style: none;
+            padding: 0 14px 14px;
+        }
+
+        . location-item {
+            padding: 12px;
+            margin:   6px 0;
+            background:   rgba(255,255,255,0.03);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .location-item:hover {
+            background: rgba(0,212,255,0.15);
+            transform: translateX(5px);
+        }
+
+        .  location-item.visited {
+            background: rgba(0,255,136,0.1);
+            border-left:   3px solid #00ff88;
+            padding-left: 9px;
+        }
+
+        .  loc-icon { 
+            font-size: 1.2rem; 
+        }
+
+        . loc-name { 
+            flex: 1; 
+            color: #ddd; 
+        }
+
+        . loc-arrow {
+            color: #00d4ff;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .location-item: hover .loc-arrow {
+            opacity: 1;
+        }
+
+        .sidebar:  :-webkit-scrollbar { 
+            width: 6px; 
+        }
+
+        .sidebar::-webkit-scrollbar-track { 
+            background:   rgba(255,255,255,0.02); 
+        }
+
+        . sidebar::-webkit-scrollbar-thumb {
+            background:  rgba(0,212,255,0.4);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="map-section">
+            <div class="header">
+                <h1>🌏 ACCEL INTERNATIONAL</h1>
+                <p>China Business Trip Route Map</p>
+            </div>
+
+            <div class="legend">
+                <div class="legend-title">🚀 ROUTES</div>
+                <div class="legend-item">
+                    <div class="legend-line legend-start"></div>
+                    <span>🏙️ Departure</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line legend-flight"></div>
+                    <span>✈️ Flight</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line legend-ground"></div>
+                    <span>🚗 Ground</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line legend-train"></div>
+                    <span>🚄 HSR</span>
+                </div>
+            </div>
+
+            <div id="map"></div>
+
+            <div class="info-box" id="infoBox">
+                <h3 id="infoTitle">Location</h3>
+                <p id="infoCoords">Coordinates</p>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="addMarkers()">📍 Show All Locations</button>
+                <button class="btn" onclick="resetMap()">🏠 Reset View</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>📅 Trip Itinerary</h2>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">7</div>
+                    <div class="stat-label">Days</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">8+</div>
+                    <div class="stat-label">Suppliers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">~29K</div>
+                    <div class="stat-label">km</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">Cities</div>
+                </div>
+            </div>
+
+            <div class="day-list">
+                <div class="day-card open" id="day0">
+                    <div class="day-header" onclick="toggleDay('day0')">
+                        <div>
+                            <div class="day-num">Departure</div>
+                            <div class="day-title">New York Departure</div>
+                        </div>
+                        <span class="day-toggle">▼</span>
+                    </div>
+                    <div class="day-content">
+                        <ul class="location-list">
+                            <li class="location-item" onclick="handleLocationClick(40.6413, -73.7781, 'New York Kennedy Airport', 'day0', 0)">
+                                <span class="loc-icon">🗽</span>
+                                <span class="loc-name">JFK Airport - New York</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(40.7580, -73.9855, 'Times Square', 'day0', 1)">
+                                <span class="loc-icon">🌆</span>
+                                <span class="loc-name">Times Square</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="day-card" id="day1" onclick="handleDayClick('day1')">
+                    <div class="day-header" onclick="toggleDay('day1'); event.stopPropagation();">
+                        <div>
+                            <div class="day-num">Day 1</div>
+                            <div class="day-title">Arrival in Shanghai</div>
+                        </div>
+                        <span class="day-toggle">▼</span>
+                    </div>
+                    <div class="day-content">
+                        <ul class="location-list">
+                            <li class="location-item" onclick="handleLocationClick(31.1443, 121.8083, 'Shanghai Pudong Airport', 'day1', 2)">
+                                <span class="loc-icon">✈️</span>
+                                <span class="loc-name">Shanghai Pudong Airport (PVG)</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(31.24, 121.49, 'The Bund', 'day1', 3)">
+                                <span class="loc-icon">🌃</span>
+                                <span class="loc-name">The Bund</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(31.2354, 121.4747, 'Nanjing Road', 'day1', 4)">
+                                <span class="loc-icon">🛍️</span>
+                                <span class="loc-name">Nanjing Road</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(31.2194, 121.4728, 'Xintiandi', 'day1', 5)">
+                                <span class="loc-icon">🏮</span>
+                                <span class="loc-name">Xintiandi</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="day-card" id="day2" onclick="handleDayClick('day2')">
+                    <div class="day-header" onclick="toggleDay('day2'); event.stopPropagation();">
+                        <div>
+                            <div class="day-num">Day 2</div>
+                            <div class="day-title">Shanghai Suppliers</div>
+                        </div>
+                        <span class="day-toggle">▼</span>
+                    </div>
+                    <div class="day-content">
+                        <ul class="location-list">
+                            <li class="location-item" onclick="handleLocationClick(31.171553825333667, 121.55886014872988, 'Shanghai Nanyang Electrical Materials Factory', 'day2', 6)">
+                                <span class="loc-icon">🏭</span>
+                                <span class="loc-name">Supplier A - Shanghai Nanyang Electrical</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(31.29758063481707, 121.10099229717247, 'Kunshan Fuchuan Mechanical & Electrical Technology', 'day2', 7)">
+                                <span class="loc-icon">🏭</span>
+                                <span class="loc-name">Supplier B - Kunshan Fuchuan M&E</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="day-card" id="day3" onclick="handleDayClick('day3')">
+                    <div class="day-header" onclick="toggleDay('day3'); event.stopPropagation();">
+                        <div>
+                            <div class="day-num">Day 3</div>
+                            <div class="day-title">Yangtze Delta</div>
+                        </div>
+                        <span class="day-toggle">▼</span>
+                    </div>
+                    <div class="day-content">
+                        <ul class="location-list">
+                            <li class="location-item" onclick="handleLocationClick(31.90, 120.48, 'Zhangjiagang Wentuo Machinery', 'day3', 8)">
+                                <span class="loc-icon">🏭</span>
+                                <span class="loc-name">Supplier C - Zhangjiagang Wentuo</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(32.88, 120.45, 'Jiangsu Xinliqiang Machinery Technology', 'day3', 9)">
+                                <span class="loc-icon">🏭</span>
+                                <span class="loc-name">Supplier D - Jiangsu Xinliqiang</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="day-card" id="day4" onclick="handleDayClick('day4')">
+                    <div class="day-header" onclick="toggleDay('day4'); event.stopPropagation();">
+                        <div>
+                            <div class="day-num">Day 4</div>
+                            <div class="day-title">Finewire Company</div>
+                        </div>
+                        <span class="day-toggle">▼</span>
+                    </div>
+                    <div class="day-content">
+                        <ul class="location-list">
+                            <li class="location-item" onclick="handleLocationClick(31.84, 119.90, 'Finewire Company', 'day4', 10)">
+                                <span class="loc-icon">🏢</span>
+                                <span class="loc-name">Finewire Company HQ</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(31.85, 119.95, 'Changzhou Lida Hongshengda Electronic Equipment', 'day4', 11)">
+                                <span class="loc-icon">🏭</span>
+                                <span class="loc-name">Supplier E - Changzhou Lida Hongshengda</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(31.518817902157572, 119.725000498501, 'Wuxi Baochuan Mechanical & Electrical Equipment Manufacturing', 'day4', 12)">
+                                <span class="loc-icon">🏭</span>
+                                <span class="loc-name">Supplier F - Wuxi Baochuan M&E</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="day-card" id="day5" onclick="handleDayClick('day5')">
+                    <div class="day-header" onclick="toggleDay('day5'); event.stopPropagation();">
+                        <div>
+                            <div class="day-num">Day 5</div>
+                            <div class="day-title">Transfer to Beijing</div>
+                        </div>
+                        <span class="day-toggle">▼</span>
+                    </div>
+                    <div class="day-content">
+                        <ul class="location-list">
+                            <li class="location-item" onclick="handleLocationClick(22.76, 113.30, 'Foshan Guangyi Yongxiong Machinery', 'day5', 13)">
+                                <span class="loc-icon">🏭</span>
+                                <span class="loc-name">Supplier G - Foshan Guangyi Yongxiong</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(31.1949, 121.32, 'Shanghai Hongqiao Station', 'day5', 14)">
+                                <span class="loc-icon">🚄</span>
+                                <span class="loc-name">Shanghai Hongqiao Station</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(39.8987, 116.3783, 'Beijing South Station', 'day5', 15)">
+                                <span class="loc-icon">🚄</span>
+                                <span class="loc-name">Beijing South Station</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="day-card" id="day6" onclick="handleDayClick('day6')">
+                    <div class="day-header" onclick="toggleDay('day6'); event.stopPropagation();">
+                        <div>
+                            <div class="day-num">Day 6</div>
+                            <div class="day-title">Cultural & Departure</div>
+                        </div>
+                        <span class="day-toggle">▼</span>
+                    </div>
+                    <div class="day-content">
+                        <ul class="location-list">
+                            <li class="location-item" onclick="handleLocationClick(40.4319, 116.5704, 'Great Wall', 'day6', 16)">
+                                <span class="loc-icon">🏯</span>
+                                <span class="loc-name">Great Wall - Mutianyu</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(39.9163, 116.3972, 'Forbidden City', 'day6', 17)">
+                                <span class="loc-icon">🏛️</span>
+                                <span class="loc-name">Forbidden City</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                            <li class="location-item" onclick="handleLocationClick(40.0799, 116.6031, 'Beijing Capital Airport', 'day6', 18)">
+                                <span class="loc-icon">✈️</span>
+                                <span class="loc-name">Beijing Capital Airport (PEK)</span>
+                                <span class="loc-arrow">→</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var map;
+        var markers = [];
+        var polylines = [];
+        var transportOverlay = null;
+        var distanceOverlay = null;
+        var lastLocation = null;
+        var visitedLocations = [];
+
+        // All locations information (in order of visit)
+        var allLocations = [
+            { index: 0, lat: 40.6413, lng: -73.7781, name: 'New York Kennedy Airport', transport: '🚗' },
+            { index: 1, lat: 40.7580, lng: -73.9855, name: 'Times Square', transport: '✈️' },
+            { index: 2, lat: 31.1443, lng: 121.8083, name: 'Shanghai Pudong Airport', transport:  '🚗' },
+            { index: 3, lat:  31.24, lng: 121.49, name: 'The Bund', transport: '🚗' },
+            { index: 4, lat: 31.2354, lng: 121.4747, name: 'Nanjing Road', transport: '🚗' },
+            { index: 5, lat: 31.2194, lng: 121.4728, name: 'Xintiandi', transport: '🚗' },
+            { index:   6, lat: 31.171553825333667, lng: 121.55886014872988, name: 'Shanghai Nanyang Electrical Materials Factory', transport: '🚗' },
+            { index:   7, lat: 31.29758063481707, lng:   121.10099229717247, name: 'Kunshan Fuchuan Mechanical & Electrical Technology', transport: '🚗' },
+            { index:  8, lat: 31.90, lng: 120.48, name: 'Zhangjiagang Wentuo Machinery', transport: '🚗' },
+            { index:  9, lat: 32.88, lng: 120.45, name: 'Jiangsu Xinliqiang Machinery Technology', transport: '🚗' },
+            { index:  10, lat: 31.84, lng: 119.90, name: 'Finewire Company', transport: '🚗' },
+            { index: 11, lat: 31.85, lng: 119.95, name: 'Changzhou Lida Hongshengda Electronic Equipment', transport: '🚗' },
+            { index: 12, lat: 31.518817902157572, lng: 119.725000498501, name: 'Wuxi Baochuan Mechanical & Electrical Equipment Manufacturing', transport: '🚗' },
+            { index: 13, lat: 22.76, lng: 113.30, name: 'Foshan Guangyi Yongxiong Machinery', transport: '🚗' },
+            { index:   14, lat: 31.1949, lng: 121.32, name: 'Shanghai Hongqiao Station', transport: '🚄' },
+            { index:  15, lat: 39.8987, lng: 116.3783, name: 'Beijing South Station', transport: '🚗' },
+            { index: 16, lat: 40.4319, lng: 116.5704, name: 'Great Wall - Mutianyu', transport:   '🚗' },
+            { index:   17, lat: 39.9163, lng: 116.3972, name: 'Forbidden City', transport:  '🚗' },
+            { index:   18, lat: 40.0799, lng: 116.6031, name: 'Beijing Capital Airport', transport: '🚗' }
+        ];
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 3,
+                center: { lat:   20, lng: 110 }
+            });
+        }
+
+        function createMarkerIcon(color) {
+            return {
+                path: google.maps.  SymbolPath.  CIRCLE,
+                scale: 12,
+                fillColor: '#' + color,
+                fillOpacity: 1,
+                strokeColor: '#fff',
+                strokeWeight: 2
+            };
+        }
+
+        function addMarkers() {
+            markers.forEach(function(marker) {
+                marker.setMap(null);
+            });
+            markers = [];
+
+            var locations = [
+                { name: '🗽 New York JFK', lat: 40.6413, lng: -73.7781, color: '9C27B0' },
+                { name: '🌆 Times Square', lat: 40.7580, lng: -73.9855, color: '9C27B0' },
+                { name: '✈️ Shanghai Pudong', lat: 31.1443, lng: 121.8083, color: 'FF6B6B' },
+                { name: '🌃 The Bund', lat: 31.24, lng: 121.49, color: '00D4FF' },
+                { name: '🛍️ Nanjing Road', lat: 31.2354, lng: 121.4747, color: '00FF88' },
+                { name:   '🏮 Xintiandi', lat:  31.2194, lng: 121.4728, color: 'FFD700' },
+                { name:   '🏭 Supplier A', lat: 31.171553825333667, lng: 121.55886014872988, color:   '00FF88' },
+                { name:  '🏭 Supplier B', lat: 31.29758063481707, lng: 121.10099229717247, color:  '00FF88' },
+                { name:  '🏭 Supplier C', lat: 31.90, lng: 120.48, color: '00FF88' },
+                { name:  '🏭 Supplier D', lat: 32.88, lng: 120.45, color: '00FF88' },
+                { name:  '🏢 Finewire', lat: 31.84, lng: 119.90, color: 'FFD700' },
+                { name: '🏭 Supplier E', lat: 31.85, lng: 119.95, color: '00FF88' },
+                { name:   '🏭 Supplier F', lat: 31.518817902157572, lng: 119.725000498501, color: '00FF88' },
+                { name:  '🏭 Supplier G', lat: 22.76, lng: 113.30, color: '00FF88' },
+                { name: '🚄 Hongqiao', lat: 31.1949, lng: 121.32, color: 'FF6B6B' },
+                { name: '🚄 Beijing South', lat: 39.8987, lng: 116.3783, color: 'FF6B6B' },
+                { name: '🏯 Great Wall', lat: 40.4319, lng: 116.5704, color: 'FF9F43' },
+                { name: '🏛️ Forbidden City', lat: 39.9163, lng: 116.3972, color: '00D4FF' },
+                { name: '✈️ Beijing Capital', lat: 40.0799, lng: 116.6031, color: 'FF6B6B' }
+            ];
+
+            locations.forEach(function(location) {
+                var marker = new google.maps.Marker({
+                    position: { lat: location.lat, lng: location.lng },
+                    map: map,
+                    title:  location.name,
+                    icon: createMarkerIcon(location. color)
+                });
+
+                marker.addListener('click', function() {
+                    focusLocation(location.lat, location.lng, location.name, '');
+                });
+
+                markers.push(marker);
+            });
+
+            var bounds = new google.maps.LatLngBounds();
+            markers.forEach(function(marker) {
+                bounds.extend(marker.  getPosition());
+            });
+            map.fitBounds(bounds);
+        }
+
+        // Custom Overlay for displaying transport mode labels
+        class CustomTransportOverlay extends google.maps.  OverlayView {
+            constructor(lat, lng, transport) {
+                super();
+                this.lat = lat;
+                this.lng = lng;
+                this.transport = transport;
+                this.div = null;
+            }
+
+            onAdd() {
+                const div = document.createElement('div');
+                div.style.position = 'absolute';
+                div.style.background = 'rgba(0, 0, 0, 0.8)';
+                div.style.color = '#fff';
+                div.style.  padding = '6px 10px';
+                div.style.  borderRadius = '8px';
+                div.style.  fontSize = '1. 2rem';
+                div.style. fontWeight = 'bold';
+                div.style.whiteSpace = 'nowrap';
+                div.style.zIndex = '100';
+                div.textContent = this.transport;
+                this.div = div;
+                this.getPanes().overlayMouseTarget.  appendChild(div);
+            }
+
+            draw() {
+                const overlay = this;
+                const projection = this.getProjection();
+                const position = projection.fromLatLngToDivPixel(
+                    new google.maps.  LatLng(this.lat, this.lng)
+                );
+                const div = overlay.div;
+                div.style.left = (position.x - 25) + 'px';
+                div.style.top = (position.y - 30) + 'px';
+            }
+
+            onRemove() {
+                if (this.div) {
+                    this.div.parentNode.removeChild(this.div);
+                    this.div = null;
+                }
+            }
+        }
+
+        // Custom Overlay for displaying distance labels
+        class DistanceOverlay extends google.maps. OverlayView {
+            constructor(lat, lng, text) {
+                super();
+                this.lat = lat;
+                this.lng = lng;
+                this.text = text;
+                this.div = null;
+            }
+
+            onAdd() {
+                const div = document.createElement('div');
+                div.style.  position = 'absolute';
+                div.style.background = 'rgba(32, 32, 32, 0.95)';
+                div.style.  color = '#00d4ff';
+                div.style. padding = '8px 16px';
+                div.style.  borderRadius = '16px';
+                div.style.  fontSize = '0.95rem';
+                div.style.  fontWeight = 'bold';
+                div.style.whiteSpace = 'nowrap';
+                div.style.zIndex = '101';
+                div.style.border = '1px solid rgba(0, 212, 255, 0.5)';
+                div.style.  boxShadow = '0 2px 8px rgba(0, 212, 255, 0.2)';
+                div.textContent = this.text;
+                this.div = div;
+                this.getPanes().overlayMouseTarget. appendChild(div);
+            }
+
+            draw() {
+                const projection = this.getProjection();
+                const pos = projection.fromLatLngToDivPixel(
+                    new google.maps. LatLng(this.lat, this.  lng)
+                );
+                if (this.div) {
+                    this.div.style.left = (pos.x - 40) + 'px';
+                    this.div.style.top = (pos.y - 50) + 'px';
+                }
+            }
+
+            onRemove() {
+                if (this.div) {
+                    this.div.parentNode.removeChild(this.div);
+                    this.div = null;
+                }
+            }
+        }
+
+        function drawCurvedRoute(from, to, transport) {
+            // Clear old routes
+            polylines. forEach(function(polyline) {
+                polyline.setMap(null);
+            });
+            polylines = [];
+
+            // Clear old transport overlay
+            if (transportOverlay) {
+                transportOverlay. setMap(null);
+                transportOverlay = null;
+            }
+
+            // Clear old distance overlay
+            if (distanceOverlay) {
+                distanceOverlay.  setMap(null);
+                distanceOverlay = null;
+            }
+
+            // Calculate distance
+            var p1 = new google.maps.  LatLng(from.lat, from.lng);
+            var p2 = new google.maps. LatLng(to.  lat, to.lng);
+            var meters = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
+            var miles = (meters / 1609.344).toFixed(1);
+
+            // Calculate midpoint to create curve effect
+            var midLat = (from.lat + to.lat) / 2;
+            var midLng = (from.lng + to.lng) / 2;
+
+            // Calculate offset to create curve
+            var latDiff = to.lat - from.  lat;
+            var lngDiff = to.lng - from. lng;
+            var offset = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 0.1;
+
+            // Perpendicular direction midpoint (rotate 90 degrees)
+            var angle = Math.atan2(lngDiff, latDiff);
+            var curveLatOffset = Math.cos(angle) * offset;
+            var curveLngOffset = Math.sin(angle) * offset;
+
+            // Create curved path with three points
+            var pathPoints = [];
+            for (var i = 0; i <= 100; i++) {
+                var t = i / 100;
+                // Quadratic Bezier curve
+                var lat = Math.pow(1 - t, 2) * from.lat + 2 * (1 - t) * t * (midLat + curveLatOffset) + Math.pow(t, 2) * to.lat;
+                var lng = Math.pow(1 - t, 2) * from.lng + 2 * (1 - t) * t * (midLng + curveLngOffset) + Math.pow(t, 2) * to.lng;
+                pathPoints.push({ lat: lat, lng: lng });
+            }
+
+            // Set color based on transport mode
+            var color = '#00ff88'; // Default green (Ground)
+            if (transport === '✈️') {
+                color = '#00d4ff'; // Blue (Flight)
+            } else if (transport === '🚄') {
+                color = '#ff6b6b'; // Red (Train)
+            }
+
+            var polyline = new google.maps.  Polyline({
+                path:  pathPoints,
+                geodesic:   true,
+                strokeColor: color,
+                strokeOpacity: 0.8,
+                strokeWeight: 3,
+                map:  map,
+                zIndex: 10
+            });
+
+            polylines. push(polyline);
+
+            // Add transport icon at midpoint
+            var iconLat = midLat + curveLatOffset * 0.5;
+            var iconLng = midLng + curveLngOffset * 0.5;
+
+            transportOverlay = new CustomTransportOverlay(iconLat, iconLng, transport);
+            transportOverlay.setMap(map);
+
+            // Display distance at midpoint
+            distanceOverlay = new DistanceOverlay(midLat, midLng, miles + ' miles');
+            distanceOverlay.setMap(map);
+        }
+
+        function handleLocationClick(lat, lng, name, dayId, index) {
+            // If there's a previous location, draw route
+            if (lastLocation !== null) {
+                var fromLocation = allLocations[lastLocation];
+                var toLocation = allLocations[index];
+                var transport = allLocations[lastLocation].transport;
+                drawCurvedRoute(fromLocation, toLocation, transport);
+
+                // Auto-zoom to show complete route
+                var bounds = new google.maps. LatLngBounds();
+                bounds.extend(new google.maps.LatLng(fromLocation.lat, fromLocation.lng));
+                bounds.  extend(new google.maps.  LatLng(toLocation. lat, toLocation.lng));
+                map.fitBounds(bounds);
+            } else {
+                // If no previous location, just focus on this location
+                map.setZoom(15);
+                map.panTo({lat: lat, lng: lng});
+            }
+
+            // Update last visited location
+            lastLocation = index;
+
+            // Mark visited locations
+            if (visitedLocations.indexOf(index) === -1) {
+                visitedLocations.push(index);
+                updateVisitedMarkers();
+            }
+
+            showLocation(name, lat + ', ' + lng, dayId);
+        }
+
+        function updateVisitedMarkers() {
+            // Update visited location styles in sidebar
+            var items = document.querySelectorAll('.  location-item');
+            items.  forEach(function(item) {
+                item.classList.remove('visited');
+            });
+
+            visitedLocations.forEach(function(locIndex) {
+                var items = document.querySelectorAll('. location-item');
+                var count = 0;
+                for (var i = 0; i < items.length; i++) {
+                    if (count === locIndex) {
+                        items[i].classList.add('visited');
+                        break;
+                    }
+                    if (items[i].parentElement) {
+                        count++;
+                    }
+                }
+            });
+        }
+
+        function handleDayClick(dayId) {
+            // Logic for day card click (optional)
+        }
+
+        function focusLocation(lat, lng, name, dayId) {
+            map.setZoom(15);
+            map.panTo({lat: lat, lng: lng});
+            showLocation(name, lat + ', ' + lng, dayId);
+        }
+
+        function toggleDay(id) {
+            var card = document.getElementById(id);
+            card.classList.toggle('open');
+        }
+
+        function showLocation(name, coords, dayId) {
+            document.getElementById('infoTitle').textContent = name;
+            document.getElementById('infoCoords').textContent = 'Lat/Lng: ' + coords;
+            document.getElementById('infoBox').classList.add('show');
+
+            if (dayId) {
+                var allCards = document.querySelectorAll('. day-card');
+                for (var i = 0; i < allCards.length; i++) {
+                    allCards[i].classList.remove('active');
+                }
+                document.  getElementById(dayId).classList.add('active');
+            }
+
+            setTimeout(function() {
+                document.  getElementById('infoBox').classList.remove('show');
+            }, 3000);
+        }
+
+        function resetMap() {
+            map.setCenter({ lat: 20, lng: 110 });
+            map.setZoom(3);
+            // Clear routes
+            polylines.forEach(function(polyline) {
+                polyline.setMap(null);
+            });
+            polylines = [];
+            if (transportOverlay) {
+                transportOverlay.setMap(null);
+                transportOverlay = null;
+            }
+            if (distanceOverlay) {
+                distanceOverlay. setMap(null);
+                distanceOverlay = null;
+            }
+            lastLocation = null;
+            visitedLocations = [];
+            updateVisitedMarkers();
+        }
+
+        window.addEventListener('load', function() {
+            initMap();
+            addMarkers();
+        });
+    </script>
+</body>
+</html>
